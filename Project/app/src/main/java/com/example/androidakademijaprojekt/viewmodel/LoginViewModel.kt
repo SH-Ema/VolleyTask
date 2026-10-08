@@ -21,6 +21,20 @@ class LoginViewModel(
     val authToken: String?
         get() = authRepository.authToken
 
+
+    fun loginAsDemo() {
+        authRepository.startDemoSession()
+
+        _uiState.update {
+            it.copy(
+                isLoggedIn = true,
+                isLoading = false,
+                errorMessage = null
+            )
+        }
+    }
+
+
     fun onUsernameChange(newUsername: String) {
         _uiState.update { currentState ->
             currentState.copy(

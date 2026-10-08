@@ -1,5 +1,6 @@
 package com.example.androidakademijaprojekt.database
 
+import com.example.androidakademijaprojekt.domain.Task
 import com.example.androidakademijaprojekt.network.model.TaskResponse
 
 fun TaskResponse.toEntity(isSynced: Boolean = true): TaskEntity {
@@ -30,5 +31,30 @@ fun List<TaskResponse>.toEntityList(): List<TaskEntity> {
 fun List<TaskEntity>.toResponseList(): List<TaskResponse> {
     return map { taskEntity ->
         taskEntity.toResponse()
+    }
+}
+
+
+fun TaskResponse.toDomain(): Task {
+    return Task(
+        id = id,
+        title = title,
+        body = body,
+        createdAt = createdAt
+    )
+}
+
+fun TaskEntity.toDomain(): Task {
+    return Task(
+        id = id,
+        title = title,
+        body = body,
+        createdAt = createdAt
+    )
+}
+
+fun List<TaskEntity>.toDomainList(): List<Task> {
+    return map { taskEntity ->
+        taskEntity.toDomain()
     }
 }

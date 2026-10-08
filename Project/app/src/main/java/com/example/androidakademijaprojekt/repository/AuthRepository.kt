@@ -1,3 +1,4 @@
+
 package com.example.androidakademijaprojekt.repository
 
 import com.example.androidakademijaprojekt.logger.AppLogger
@@ -12,6 +13,15 @@ class AuthRepository(
     var authToken: String? = null
         private set
 
+    var sessionMode: SessionMode? = null
+        private set
+
+    fun startDemoSession() {
+        authToken = null
+        sessionMode = SessionMode.DEMO
+        logger.logI("Demo session started.")
+    }
+
     suspend fun login(username: String, password: String): Boolean {
         logger.logI("Login started.")
 
@@ -24,6 +34,8 @@ class AuthRepository(
             )
 
             authToken = response.token
+            sessionMode = SessionMode.API
+
             logger.logI("Login successful.")
             true
         } catch (exception: Exception) {

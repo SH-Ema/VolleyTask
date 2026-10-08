@@ -11,13 +11,26 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.example.androidakademijaprojekt.repository.AuthRepository
+import com.example.androidakademijaprojekt.repository.DemoTaskRepository
+import com.example.androidakademijaprojekt.repository.SessionMode
+
+
 
 class EditTaskViewModel(
     private val taskRepository: TaskRepository,
+    private val demoTaskRepository: DemoTaskRepository,
+    private val authRepository: AuthRepository,
     private val logger: AppLogger
 ) : ViewModel() {
 
+
     private val _uiState = MutableStateFlow(EditTaskUiState())
+
+
+    private val isDemoMode: Boolean
+        get() = authRepository.sessionMode == SessionMode.DEMO
+
     val uiState = _uiState.asStateFlow()
 
     private fun todayDate(): String {
@@ -37,11 +50,13 @@ class EditTaskViewModel(
         )
     }
 
-    fun loadTask(
-        authToken: String?,
-        taskId: String
-    ) {
-        val token = requireAuthToken(authToken) ?: return
+
+    fun loadTask(authToken: String?, taskId: String) {
+        val token = if (isDemoMode) {
+            null
+        } else {
+            requireAuthToken(authToken) ?: return
+        }
 
         viewModelScope.launch {
             _uiState.update {
@@ -53,10 +68,17 @@ class EditTaskViewModel(
             }
 
             try {
-                val task = taskRepository.getTaskById(
-                    authToken = token,
-                    taskId = taskId
-                )
+
+                val task = if (isDemoMode) {
+                    demoTaskRepository.getDomainTaskById(taskId)
+                        ?: throw IllegalArgumentException("Task not found.")
+                } else {
+                    taskRepository.getDomainTaskById(
+                        authToken = requireNotNull(token),
+                        taskId = taskId
+                    )
+                }
+
 
                 _uiState.update {
                     it.copy(
@@ -78,6 +100,7 @@ class EditTaskViewModel(
             }
         }
     }
+
 
     fun onTitleChange(newTitle: String) {
         _uiState.update {
@@ -153,8 +176,8 @@ class EditTaskViewModel(
         }
     }
 
+
     fun saveTask(authToken: String?) {
-        val token = requireAuthToken(authToken) ?: return
         val currentState = _uiState.value
 
         if (currentState.title.isBlank() || currentState.body.isBlank()) {
@@ -162,6 +185,12 @@ class EditTaskViewModel(
                 it.copy(errorMessage = "Title or body are empty.")
             }
             return
+        }
+
+        val token = if (isDemoMode) {
+            null
+        } else {
+            requireAuthToken(authToken) ?: return
         }
 
         viewModelScope.launch {
@@ -173,19 +202,34 @@ class EditTaskViewModel(
             }
 
             try {
-                if (currentState.taskId == null) {
-                    taskRepository.createTask(
-                        authToken = token,
-                        title = currentState.title,
-                        body = currentState.body
-                    )
+                if (isDemoMode) {
+                    if (currentState.taskId == null) {
+                        demoTaskRepository.createTask(
+                            title = currentState.title,
+                            body = currentState.body
+                        )
+                    } else {
+                        demoTaskRepository.updateTask(
+                            taskId = currentState.taskId,
+                            title = currentState.title,
+                            body = currentState.body
+                        )
+                    }
                 } else {
-                    taskRepository.updateTask(
-                        authToken = token,
-                        taskId = currentState.taskId,
-                        title = currentState.title,
-                        body = currentState.body
-                    )
+                    if (currentState.taskId == null) {
+                        taskRepository.createTask(
+                            authToken = requireNotNull(token),
+                            title = currentState.title,
+                            body = currentState.body
+                        )
+                    } else {
+                        taskRepository.updateTask(
+                            authToken = requireNotNull(token),
+                            taskId = currentState.taskId,
+                            title = currentState.title,
+                            body = currentState.body
+                        )
+                    }
                 }
 
                 _uiState.update {
@@ -206,8 +250,9 @@ class EditTaskViewModel(
         }
     }
 
+
+
     fun deleteTask(authToken: String?) {
-        val token = requireAuthToken(authToken) ?: return
         val taskId = _uiState.value.taskId
 
         if (taskId == null) {
@@ -217,12 +262,22 @@ class EditTaskViewModel(
             return
         }
 
+        val token = if (isDemoMode) {
+            null
+        } else {
+            requireAuthToken(authToken) ?: return
+        }
+
         viewModelScope.launch {
             try {
-                taskRepository.deleteTask(
-                    authToken = token,
-                    taskId = taskId
-                )
+                if (isDemoMode) {
+                    demoTaskRepository.deleteTask(taskId)
+                } else {
+                    taskRepository.deleteTask(
+                        authToken = requireNotNull(token),
+                        taskId = taskId
+                    )
+                }
 
                 _uiState.update {
                     it.copy(
@@ -237,6 +292,7 @@ class EditTaskViewModel(
             }
         }
     }
+
 
     private fun requireAuthToken(authToken: String?): String? {
         if (authToken.isNullOrBlank()) {

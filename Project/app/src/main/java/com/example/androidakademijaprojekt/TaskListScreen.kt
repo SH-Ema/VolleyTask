@@ -26,7 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.androidakademijaprojekt.network.model.TaskResponse
+import com.example.androidakademijaprojekt.domain.Task
 import com.example.androidakademijaprojekt.viewmodel.TaskListUiState
 
 @Composable
@@ -34,10 +34,10 @@ fun TaskListScreen(
     uiState: TaskListUiState,
     onAddClick: () -> Unit,
     onVolleyballClick: () -> Unit,
-    onTaskClick: (TaskResponse) -> Unit,
-    onTaskLongClick: (TaskResponse) -> Unit
+    onTaskClick: (Task) -> Unit,
+    onTaskLongClick: (Task) -> Unit
 ) {
-    var taskToDelete by remember { mutableStateOf<TaskResponse?>(null) }
+    var taskToDelete by remember { mutableStateOf<Task?>(null) }
 
     Column(
         modifier = Modifier
@@ -130,7 +130,7 @@ fun TaskListScreen(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TaskCard(
-    task: TaskResponse,
+    task: Task,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {

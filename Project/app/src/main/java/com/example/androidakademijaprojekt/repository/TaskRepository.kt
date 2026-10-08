@@ -16,6 +16,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import com.example.androidakademijaprojekt.domain.Task
+import com.example.androidakademijaprojekt.database.toDomainList
+import com.example.androidakademijaprojekt.database.toDomain
+
+
 
 class TaskRepository(
     private val api: TaskieApiService,
@@ -23,11 +28,13 @@ class TaskRepository(
     private val logger: AppLogger
 ) {
 
-    fun observeTasks(): Flow<List<TaskResponse>> {
-         return taskDao.observeTasks().map { taskEntities ->
-            taskEntities.toResponseList()
+
+    fun observeDomainTasks(): Flow<List<Task>> {
+        return taskDao.observeTasks().map { entities ->
+            entities.toDomainList()
         }
     }
+
 
     suspend fun getAllTasks(authToken: String): List<TaskResponse> {
         logger.logI("Loading tasks.")
@@ -66,11 +73,24 @@ class TaskRepository(
         return remoteTask
     }
 
+
+    suspend fun getDomainTaskById(
+        authToken: String,
+        taskId: String
+    ): Task {
+        return getTaskById(
+            authToken = authToken,
+            taskId = taskId
+        ).toDomain()
+    }
+
+
+
     suspend fun createTask(
         authToken: String,
         title: String,
         body: String
-    ): TaskResponse {
+    ): Task {
         val localTask = TaskEntity(
             id = UUID.randomUUID().toString(),
             title = title,
@@ -92,14 +112,23 @@ class TaskRepository(
             )
 
             taskDao.deleteTaskById(localTask.id)
-            taskDao.insertTask(remoteTask.toEntity(isSynced = true))
+            taskDao.insertTask(
+                remoteTask.toEntity(isSynced = true)
+            )
 
             logger.logI("Task synced with server.")
-            remoteTask
+
+            remoteTask.toDomain()
+
         } catch (exception: Exception) {
-            localTask.toResponse()
+            logger.logE(
+                "Task could not be synced: ${exception.message}"
+            )
+
+            localTask.toDomain()
         }
     }
+
 
     suspend fun updateTask(
         authToken: String,

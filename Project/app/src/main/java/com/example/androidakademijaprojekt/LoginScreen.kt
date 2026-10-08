@@ -19,12 +19,15 @@ import androidx.compose.ui.unit.dp
 import com.example.androidakademijaprojekt.viewmodel.LoginUiState
 
 @Composable
+
 fun LoginScreen(
     uiState: LoginUiState,
     onUsernameChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onLoginClick: () -> Unit
-) {
+    onLoginClick: () -> Unit,
+    onDemoClick: () -> Unit
+)
+ {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -67,6 +70,15 @@ fun LoginScreen(
                 onClick = onLoginClick
             )
         }
+
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        CustomButton(
+            text = "Continue as Demo",
+            onClick = onDemoClick
+        )
+
 
         uiState.errorMessage?.let { message ->
             Spacer(modifier = Modifier.height(15.dp))

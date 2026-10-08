@@ -1,9 +1,11 @@
+
 package com.example.androidakademijaprojekt.DI
 
 import com.example.androidakademijaprojekt.database.TaskDatabase
 import com.example.androidakademijaprojekt.logger.AppLogger
 import com.example.androidakademijaprojekt.network.RetrofitInstance
 import com.example.androidakademijaprojekt.repository.AuthRepository
+import com.example.androidakademijaprojekt.repository.DemoTaskRepository
 import com.example.androidakademijaprojekt.repository.TaskRepository
 import com.example.androidakademijaprojekt.viewmodel.EditTaskViewModel
 import com.example.androidakademijaprojekt.viewmodel.LoginViewModel
@@ -14,13 +16,16 @@ import org.koin.dsl.module
 
 val appModule = module {
 
+    
     single {
         AppLogger(tag = "AndroidAkademija")
     }
 
+
     single {
         RetrofitInstance.api
     }
+
 
     single {
         AuthRepository(
@@ -29,15 +34,18 @@ val appModule = module {
         )
     }
 
+
     single {
         TaskDatabase.getDatabase(
             context = androidContext()
         )
     }
 
+
     single {
         get<TaskDatabase>().taskDao()
     }
+
 
     single {
         TaskRepository(
@@ -47,6 +55,16 @@ val appModule = module {
         )
     }
 
+
+    single {
+        DemoTaskRepository(
+            database = TaskDatabase.getDemoDatabase(
+                context = androidContext()
+            )
+        )
+    }
+
+
     viewModel {
         LoginViewModel(
             authRepository = get(),
@@ -54,17 +72,25 @@ val appModule = module {
         )
     }
 
+
     viewModel {
         TaskListViewModel(
             taskRepository = get(),
+            demoTaskRepository = get(),
+            authRepository = get(),
             logger = get()
         )
     }
 
+
+
     viewModel {
         EditTaskViewModel(
             taskRepository = get(),
+            demoTaskRepository = get(),
+            authRepository = get(),
             logger = get()
         )
     }
+
 }

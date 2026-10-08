@@ -56,12 +56,15 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
+
                         LoginScreen(
                             uiState = loginUiState,
                             onUsernameChange = loginViewModel::onUsernameChange,
                             onPasswordChange = loginViewModel::onPasswordChange,
-                            onLoginClick = loginViewModel::login
+                            onLoginClick = loginViewModel::login,
+                            onDemoClick = loginViewModel::loginAsDemo
                         )
+
                     }
 
                     composable("list") {

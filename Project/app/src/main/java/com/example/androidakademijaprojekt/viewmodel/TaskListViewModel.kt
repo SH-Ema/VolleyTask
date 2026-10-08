@@ -8,22 +8,39 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.example.androidakademijaprojekt.repository.AuthRepository
+import com.example.androidakademijaprojekt.repository.DemoTaskRepository
+import com.example.androidakademijaprojekt.repository.SessionMode
+
+
 
 class TaskListViewModel(
     private val taskRepository: TaskRepository,
+    private val demoTaskRepository: DemoTaskRepository,
+    private val authRepository: AuthRepository,
     private val logger: AppLogger
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TaskListUiState())
     val uiState = _uiState.asStateFlow()
 
+    private val isDemoMode: Boolean
+        get() = authRepository.sessionMode == SessionMode.DEMO
+
     init {
         observeLocalTasks()
     }
 
+
     private fun observeLocalTasks() {
         viewModelScope.launch {
-            taskRepository.observeTasks().collect { tasks ->
+            val tasksFlow = if (isDemoMode) {
+                demoTaskRepository.observeDomainTasks()
+            } else {
+                taskRepository.observeDomainTasks()
+            }
+
+            tasksFlow.collect { tasks ->
                 _uiState.update {
                     it.copy(
                         tasks = tasks,
@@ -34,7 +51,18 @@ class TaskListViewModel(
         }
     }
 
+
     fun loadTasks(authToken: String?) {
+        if (isDemoMode) {
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    errorMessage = null
+                )
+            }
+            return
+        }
+
         val token = requireAuthToken(authToken) ?: return
 
         viewModelScope.launch {
@@ -65,10 +93,23 @@ class TaskListViewModel(
         }
     }
 
-    fun deleteTask(
-        authToken: String?,
-        taskId: String
-    ) {
+    fun deleteTask(authToken: String?, taskId: String) {
+        if (isDemoMode) {
+            viewModelScope.launch {
+                try {
+                    demoTaskRepository.deleteTask(taskId)
+                    _uiState.update {
+                        it.copy(errorMessage = null)
+                    }
+                } catch (exception: Exception) {
+                    _uiState.update {
+                        it.copy(errorMessage = "Failed to delete demo task.")
+                    }
+                }
+            }
+            return
+        }
+
         val token = requireAuthToken(authToken) ?: return
 
         viewModelScope.launch {
