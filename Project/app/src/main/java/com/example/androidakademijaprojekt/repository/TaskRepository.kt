@@ -4,12 +4,9 @@ import com.example.androidakademijaprojekt.database.TaskDao
 import com.example.androidakademijaprojekt.database.TaskEntity
 import com.example.androidakademijaprojekt.database.toEntity
 import com.example.androidakademijaprojekt.database.toEntityList
-import com.example.androidakademijaprojekt.database.toResponse
-import com.example.androidakademijaprojekt.database.toResponseList
 import com.example.androidakademijaprojekt.logger.AppLogger
 import com.example.androidakademijaprojekt.network.TaskieApiService
 import com.example.androidakademijaprojekt.network.model.TaskRequest
-import com.example.androidakademijaprojekt.network.model.TaskResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
@@ -36,31 +33,38 @@ class TaskRepository(
     }
 
 
-    suspend fun getAllTasks(authToken: String): List<TaskResponse> {
+
+    suspend fun getAllTasks(authToken: String) {
         logger.logI("Loading tasks.")
 
-        return try {
+        try {
             val response = api.getAllTasks(
                 authToken = authHeader(authToken)
             )
 
-            taskDao.insertTasks(response.tasks.toEntityList())
+            taskDao.insertTasks(
+                response.tasks.toEntityList()
+            )
+
             logger.logI("Remote tasks saved to local database.")
 
-            taskDao.getAllTasksOnce().toResponseList()
         } catch (exception: Exception) {
-            taskDao.getAllTasksOnce().toResponseList()
+            logger.logE(
+                "Failed to fetch remote tasks: ${exception.message}"
+            )
         }
     }
 
-    suspend fun getTaskById(
+
+
+    suspend fun getDomainTaskById(
         authToken: String,
         taskId: String
-    ): TaskResponse {
+    ): Task {
         val localTask = taskDao.getTaskById(taskId)
 
         if (localTask != null) {
-            return localTask.toResponse()
+            return localTask.toDomain()
         }
 
         val remoteTask = api.getTaskById(
@@ -70,19 +74,9 @@ class TaskRepository(
 
         taskDao.insertTask(remoteTask.toEntity())
 
-        return remoteTask
+        return remoteTask.toDomain()
     }
 
-
-    suspend fun getDomainTaskById(
-        authToken: String,
-        taskId: String
-    ): Task {
-        return getTaskById(
-            authToken = authToken,
-            taskId = taskId
-        ).toDomain()
-    }
 
 
 

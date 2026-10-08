@@ -3,9 +3,6 @@ package com.example.androidakademijaprojekt.repository
 
 import com.example.androidakademijaprojekt.database.TaskDatabase
 import com.example.androidakademijaprojekt.database.TaskEntity
-import com.example.androidakademijaprojekt.database.toResponse
-import com.example.androidakademijaprojekt.database.toResponseList
-import com.example.androidakademijaprojekt.network.model.TaskResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
@@ -31,10 +28,6 @@ class DemoTaskRepository(
         }
     }
 
-
-    suspend fun getTaskById(taskId: String): TaskResponse? {
-        return taskDao.getTaskById(taskId)?.toResponse()
-    }
 
     suspend fun createTask(title: String, body: String) {
         val task = TaskEntity(
