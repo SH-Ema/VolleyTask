@@ -33,4 +33,3 @@ Demo Mode works without an internet connection and saves tasks locally.
 
 The original project also includes API-based login and task management, but the external API is currently unavailable.
 
-~~~~
